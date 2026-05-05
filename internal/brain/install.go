@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"nea-ai/internal/agents"
 	"nea-ai/internal/model"
@@ -51,7 +50,7 @@ func Install(options InstallOptions) (InstallResult, error) {
 	if options.Component == "" {
 		options.Component = model.ComponentBrain
 	}
-	if !supportedAgent(options.Agent) {
+	if !model.IsAgentInstallable(options.Agent) {
 		return InstallResult{}, fmt.Errorf("brain install does not support agent %q", options.Agent)
 	}
 	if options.Component != model.ComponentBrain {
@@ -72,7 +71,7 @@ func Install(options InstallOptions) (InstallResult, error) {
 	}
 
 	configPath := agents.ConfigPath(paths.HomeDir, options.Agent)
-	backupPath, err := backupIfExists(configPath)
+	backupPath, err := system.BackupFile(configPath)
 	if err != nil {
 		return InstallResult{}, err
 	}
@@ -100,7 +99,7 @@ func Uninstall(options UninstallOptions) (UninstallResult, error) {
 	if options.Component == "" {
 		options.Component = model.ComponentBrain
 	}
-	if !supportedAgent(options.Agent) {
+	if !model.IsAgentInstallable(options.Agent) {
 		return UninstallResult{}, fmt.Errorf("brain uninstall does not support agent %q", options.Agent)
 	}
 	if options.Component != model.ComponentBrain {
@@ -121,7 +120,7 @@ func Uninstall(options UninstallOptions) (UninstallResult, error) {
 	}
 
 	configPath := agents.ConfigPath(paths.HomeDir, options.Agent)
-	backupPath, err := backupIfExists(configPath)
+	backupPath, err := system.BackupFile(configPath)
 	if err != nil {
 		return UninstallResult{}, err
 	}
@@ -140,15 +139,6 @@ func Uninstall(options UninstallOptions) (UninstallResult, error) {
 		BackupPath:    backupPath,
 		CommandOutput: strings.TrimSpace(string(output)),
 	}, nil
-}
-
-func supportedAgent(agent model.AgentID) bool {
-	switch agent {
-	case model.AgentCodex, model.AgentOpenCode, model.AgentClaudeCode:
-		return true
-	default:
-		return false
-	}
 }
 
 func ResolveNeaBrain(workDir string) (string, error) {
@@ -176,23 +166,4 @@ func siblingCandidates(workDir string) []string {
 		filepath.Join(parent, "nea-brain", name),
 		filepath.Join(parent, "neabrain", name),
 	}
-}
-
-func backupIfExists(path string) (string, error) {
-	data, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
-		return "", nil
-	}
-	if err != nil {
-		return "", err
-	}
-
-	backupPath := fmt.Sprintf("%s.nea-ai.%s.bak", path, time.Now().UTC().Format("20060102150405"))
-	if err := os.MkdirAll(filepath.Dir(backupPath), 0o755); err != nil {
-		return "", err
-	}
-	if err := os.WriteFile(backupPath, data, 0o644); err != nil {
-		return "", err
-	}
-	return backupPath, nil
 }

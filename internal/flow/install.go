@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"nea-ai/internal/model"
 	"nea-ai/internal/system"
@@ -49,7 +48,7 @@ func Install(options InstallOptions) (InstallResult, error) {
 	if options.Agent == "" {
 		options.Agent = model.AgentCodex
 	}
-	if !supportedAgent(options.Agent) {
+	if !model.IsAgentInstallable(options.Agent) {
 		return InstallResult{}, fmt.Errorf("flow install does not support agent %q", options.Agent)
 	}
 
@@ -108,7 +107,7 @@ func Uninstall(options UninstallOptions) (UninstallResult, error) {
 	if options.Agent == "" {
 		options.Agent = model.AgentCodex
 	}
-	if !supportedAgent(options.Agent) {
+	if !model.IsAgentInstallable(options.Agent) {
 		return UninstallResult{}, fmt.Errorf("flow uninstall does not support agent %q", options.Agent)
 	}
 
@@ -157,15 +156,6 @@ type layout struct {
 	promptTarget   string
 	commandsSource string
 	commandsTarget string
-}
-
-func supportedAgent(agent model.AgentID) bool {
-	switch agent {
-	case model.AgentCodex, model.AgentOpenCode, model.AgentClaudeCode:
-		return true
-	default:
-		return false
-	}
 }
 
 func agentLayout(homeDir string, workDir string, agent model.AgentID) layout {
@@ -439,7 +429,7 @@ func installProjectPrompt(source string, target string) (string, error) {
 		return "", err
 	}
 	text := string(existing)
-	backupPath, err := backupFile(target, existing)
+	backupPath, err := system.BackupFile(target)
 	if err != nil {
 		return "", err
 	}
@@ -468,7 +458,7 @@ func uninstallProjectPrompt(target string) (string, error) {
 	if !strings.Contains(text, markerStart) || !strings.Contains(text, markerEnd) {
 		return "", nil
 	}
-	backupPath, err := backupFile(target, data)
+	backupPath, err := system.BackupFile(target)
 	if err != nil {
 		return "", err
 	}
@@ -488,12 +478,4 @@ func replaceMarkedBlock(text string, block string) string {
 		next += "\n"
 	}
 	return next
-}
-
-func backupFile(path string, data []byte) (string, error) {
-	backupPath := fmt.Sprintf("%s.nea-ai.%s.bak", path, time.Now().UTC().Format("20060102150405"))
-	if err := os.WriteFile(backupPath, data, 0o644); err != nil {
-		return "", err
-	}
-	return backupPath, nil
 }

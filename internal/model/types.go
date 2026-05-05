@@ -21,6 +21,7 @@ const (
 	ComponentPermissions ComponentID = "permissions"
 )
 
+// SupportedAgents lists every agent the CLI recognises, including detection-only.
 func SupportedAgents() []AgentID {
 	return []AgentID{
 		AgentCodex,
@@ -30,6 +31,31 @@ func SupportedAgents() []AgentID {
 		AgentVSCode,
 		AgentGeminiCLI,
 	}
+}
+
+// InstallableAgents returns the agents that install/uninstall pipelines support today.
+func InstallableAgents() []AgentID {
+	return []AgentID{AgentCodex, AgentClaudeCode, AgentOpenCode}
+}
+
+// IsAgentKnown reports whether agent is part of SupportedAgents.
+func IsAgentKnown(agent AgentID) bool {
+	for _, candidate := range SupportedAgents() {
+		if candidate == agent {
+			return true
+		}
+	}
+	return false
+}
+
+// IsAgentInstallable reports whether agent can be configured by install/uninstall.
+func IsAgentInstallable(agent AgentID) bool {
+	for _, candidate := range InstallableAgents() {
+		if candidate == agent {
+			return true
+		}
+	}
+	return false
 }
 
 func SupportedComponents() []ComponentID {

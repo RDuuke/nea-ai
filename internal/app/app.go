@@ -80,11 +80,14 @@ func Run(args []string, stdout io.Writer) error {
 func runStatus(args []string) (status.Report, error) {
 	fs := flag.NewFlagSet("status", flag.ContinueOnError)
 	agent := fs.String("agent", string(model.AgentCodex), "Agent to inspect")
-	_ = fs.Bool("json", true, "Write JSON output")
 	if err := fs.Parse(args); err != nil {
 		return status.Report{}, err
 	}
-	return status.BuildForAgent(Version, model.AgentID(*agent))
+	agentID, err := parseKnownAgent(*agent)
+	if err != nil {
+		return status.Report{}, err
+	}
+	return status.BuildForAgent(Version, agentID)
 }
 
 func runDoctorValue(args []string) (any, error) {
@@ -94,20 +97,26 @@ func runDoctorValue(args []string) (any, error) {
 	if err := fs.Parse(args); err != nil {
 		return nil, err
 	}
-	if *fix {
-		return doctor.FixForAgent(Version, model.AgentID(*agent))
+	agentID, err := parseKnownAgent(*agent)
+	if err != nil {
+		return nil, err
 	}
-	return doctor.RunForAgent(Version, model.AgentID(*agent))
+	if *fix {
+		if !model.IsAgentInstallable(agentID) {
+			return nil, installableAgentError(*agent)
+		}
+		return doctor.FixForAgent(Version, agentID)
+	}
+	return doctor.RunForAgent(Version, agentID)
 }
 
 func runFlow(args []string) (any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("missing flow command; supported: status")
+		return nil, fmt.Errorf("missing flow command; supported: status, quick")
 	}
 	switch args[0] {
 	case "status":
 		fs := flag.NewFlagSet("flow status", flag.ContinueOnError)
-		_ = fs.Bool("json", true, "Write JSON output")
 		if err := fs.Parse(args[1:]); err != nil {
 			return nil, err
 		}
@@ -156,12 +165,16 @@ func runInstall(args []string) (InstallReport, error) {
 	if err := fs.Parse(args); err != nil {
 		return InstallReport{}, err
 	}
+	agentID, err := parseInstallableAgent(*agent)
+	if err != nil {
+		return InstallReport{}, err
+	}
 	paths, err := system.ResolvePaths()
 	if err != nil {
 		return InstallReport{}, err
 	}
 	registry := components.DefaultRegistry()
-	ctx := components.ContextFromPaths(paths, model.AgentID(*agent))
+	ctx := components.ContextFromPaths(paths, agentID)
 	report := InstallReport{Components: map[model.ComponentID]any{}}
 	for _, component := range splitComponents(*componentList) {
 		id := model.ComponentID(component)
@@ -189,12 +202,16 @@ func runUninstall(args []string) (UninstallReport, error) {
 	if err := fs.Parse(args); err != nil {
 		return UninstallReport{}, err
 	}
+	agentID, err := parseInstallableAgent(*agent)
+	if err != nil {
+		return UninstallReport{}, err
+	}
 	paths, err := system.ResolvePaths()
 	if err != nil {
 		return UninstallReport{}, err
 	}
 	registry := components.DefaultRegistry()
-	ctx := components.ContextFromPaths(paths, model.AgentID(*agent))
+	ctx := components.ContextFromPaths(paths, agentID)
 	report := UninstallReport{Components: map[model.ComponentID]any{}}
 	for _, component := range splitComponents(*componentList) {
 		id := model.ComponentID(component)
@@ -209,6 +226,34 @@ func runUninstall(args []string) (UninstallReport, error) {
 		report.Components[id] = result
 	}
 	return report, nil
+}
+
+func parseKnownAgent(raw string) (model.AgentID, error) {
+	id := model.AgentID(raw)
+	if !model.IsAgentKnown(id) {
+		return "", fmt.Errorf("unknown agent %q; known: %s", raw, joinAgents(model.SupportedAgents()))
+	}
+	return id, nil
+}
+
+func parseInstallableAgent(raw string) (model.AgentID, error) {
+	id := model.AgentID(raw)
+	if !model.IsAgentInstallable(id) {
+		return "", installableAgentError(raw)
+	}
+	return id, nil
+}
+
+func installableAgentError(raw string) error {
+	return fmt.Errorf("agent %q is not installable yet; supported: %s", raw, joinAgents(model.InstallableAgents()))
+}
+
+func joinAgents(ids []model.AgentID) string {
+	names := make([]string, 0, len(ids))
+	for _, id := range ids {
+		names = append(names, string(id))
+	}
+	return strings.Join(names, ", ")
 }
 
 func splitComponents(raw string) []string {
@@ -235,13 +280,15 @@ func printHelp(stdout io.Writer) {
 
 Usage:
   nea-ai version
-  nea-ai status --json [--agent codex|opencode|claude-code]
-  nea-ai doctor [--fix] [--agent codex|opencode|claude-code]
+  nea-ai status [--agent codex|claude-code|opencode|cursor|vscode|gemini-cli]
+  nea-ai doctor [--fix] [--agent codex|claude-code|opencode]
   nea-ai init
-  nea-ai flow status --json
+  nea-ai flow status
   nea-ai flow quick <change-name> [--title "..."] [--objective "..."]
-  nea-ai install --agent codex|opencode|claude-code --components brain,flow
-  nea-ai uninstall --agent codex|opencode|claude-code --components brain,flow
+  nea-ai install --agent codex|claude-code|opencode --components brain,flow
+  nea-ai uninstall --agent codex|claude-code|opencode --components brain,flow
 
-Foundation commands are implemented: version, status, doctor, init, install/uninstall brain/flow for codex, opencode, and claude-code.`)
+All commands emit JSON on stdout. Foundation commands implemented: version,
+status, doctor, init, install/uninstall (brain,flow) and flow (status, quick)
+for codex, claude-code, and opencode.`)
 }
