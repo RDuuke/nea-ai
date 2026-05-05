@@ -38,7 +38,7 @@ func Run(args []string, stdout io.Writer) error {
 		}
 		return writeJSON(stdout, report)
 	case "doctor":
-		report, err := runDoctor(args[1:])
+		report, err := runDoctorValue(args[1:])
 		if err != nil {
 			return err
 		}
@@ -80,11 +80,15 @@ func runStatus(args []string) (status.Report, error) {
 	return status.BuildForAgent(Version, model.AgentID(*agent))
 }
 
-func runDoctor(args []string) (doctor.Report, error) {
+func runDoctorValue(args []string) (any, error) {
 	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
 	agent := fs.String("agent", string(model.AgentCodex), "Agent to inspect")
+	fix := fs.Bool("fix", false, "Install missing components")
 	if err := fs.Parse(args); err != nil {
-		return doctor.Report{}, err
+		return nil, err
+	}
+	if *fix {
+		return doctor.FixForAgent(Version, model.AgentID(*agent))
 	}
 	return doctor.RunForAgent(Version, model.AgentID(*agent))
 }
@@ -180,7 +184,7 @@ func printHelp(stdout io.Writer) {
 Usage:
   nea-ai version
   nea-ai status --json [--agent codex|opencode|claude-code]
-  nea-ai doctor [--agent codex|opencode|claude-code]
+  nea-ai doctor [--fix] [--agent codex|opencode|claude-code]
   nea-ai init
   nea-ai install --agent codex|opencode|claude-code --components brain,flow
   nea-ai uninstall --agent codex|opencode|claude-code --components brain,flow

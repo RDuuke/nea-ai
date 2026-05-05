@@ -27,6 +27,16 @@ type Report struct {
 	Checks []Check `json:"checks"`
 }
 
+type FixReport struct {
+	Agent      model.AgentID             `json:"agent"`
+	Ready      bool                      `json:"ready"`
+	Fixed      []model.ComponentID       `json:"fixed"`
+	Skipped    []model.ComponentID       `json:"skipped,omitempty"`
+	Components map[model.ComponentID]any `json:"components,omitempty"`
+	Before     Report                    `json:"before"`
+	After      Report                    `json:"after"`
+}
+
 func Run(version string) (Report, error) {
 	return RunForAgent(version, model.AgentCodex)
 }
@@ -57,6 +67,58 @@ func RunForAgent(version string, agent model.AgentID) (Report, error) {
 		}
 	}
 	return Report{Ready: ready, Checks: checks}, nil
+}
+
+func FixForAgent(version string, agent model.AgentID) (FixReport, error) {
+	if agent == "" {
+		agent = model.AgentCodex
+	}
+	before, err := RunForAgent(version, agent)
+	if err != nil {
+		return FixReport{}, err
+	}
+	st, err := status.BuildForAgent(version, agent)
+	if err != nil {
+		return FixReport{}, err
+	}
+
+	registry := components.DefaultRegistry()
+	ctx := components.ContextFromPaths(st.Paths, agent)
+	results := map[model.ComponentID]any{}
+	fixed := []model.ComponentID{}
+	skipped := []model.ComponentID{}
+
+	for _, componentStatus := range st.Components {
+		if componentStatus.Installed {
+			skipped = append(skipped, componentStatus.ID)
+			continue
+		}
+		component, ok := registry.Get(componentStatus.ID)
+		if !ok {
+			skipped = append(skipped, componentStatus.ID)
+			continue
+		}
+		result, err := component.Install(ctx)
+		if err != nil {
+			return FixReport{}, err
+		}
+		results[componentStatus.ID] = result
+		fixed = append(fixed, componentStatus.ID)
+	}
+
+	after, err := RunForAgent(version, agent)
+	if err != nil {
+		return FixReport{}, err
+	}
+	return FixReport{
+		Agent:      agent,
+		Ready:      after.Ready,
+		Fixed:      fixed,
+		Skipped:    skipped,
+		Components: results,
+		Before:     before,
+		After:      after,
+	}, nil
 }
 
 func checkBool(id string, ok bool, okMessage string, failedMessage string) Check {
