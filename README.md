@@ -57,7 +57,7 @@ aplicadas a un control plane tecnico.
 
 Repos base:
 
-- NeaBrain: https://github.com/RDuuke/nea-brain
+- NeaBrain: https://github.com/RDuuke/nea-brain (`brew install RDuuke/tap/neabrain` o `scoop install neabrain`)
 - Flow-NEA: https://github.com/RDuuke/sdd-nea-flow
 
 ## Instalacion
@@ -97,9 +97,8 @@ Cada release publica paquetes nativos como assets en
 <https://github.com/RDuuke/nea-ai/releases/latest>. Ejemplo Debian/Ubuntu:
 
 ```bash
-curl -fsSL -o nea-ai.deb \
-  https://github.com/RDuuke/nea-ai/releases/download/v0.2.0/nea-ai_0.2.0_linux_amd64.deb
-sudo dpkg -i nea-ai.deb
+curl -fsSL -O https://github.com/RDuuke/nea-ai/releases/download/v0.2.1/nea-ai_0.2.1_linux_amd64.deb
+sudo dpkg -i nea-ai_0.2.1_linux_amd64.deb
 ```
 
 ### Descarga manual
