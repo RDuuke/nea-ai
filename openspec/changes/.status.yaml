@@ -1,0 +1,7 @@
+change: ""
+current_phase: INIT
+pending_tasks: []
+awaiting_approval: false
+completed: false
+modified_artifacts: []
+notes: "initialized by nea-ai"

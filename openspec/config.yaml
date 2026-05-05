@@ -1,0 +1,8 @@
+project: nea-ai
+artifact_store:
+  mode: openspec
+experimental:
+  neabrain: true
+rules:
+  apply:
+    tdd: standard

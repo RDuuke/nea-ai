@@ -1,0 +1,24 @@
+# Build artifacts
+bin/
+dist/
+*.exe
+*.test
+*.out
+
+# Local reference clone
+gentle-ai/
+
+# Go workspace/cache
+go.work
+go.work.sum
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local env/logs
+.env
+.env.*
+*.log
