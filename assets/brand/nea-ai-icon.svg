@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">NEA AI icon</title>
+  <desc id="desc">Square NEA AI app icon with a neon NEA control-plane mark.</desc>
+  <defs>
+    <linearGradient id="bg" x1="68" y1="42" x2="454" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#071114"/>
+      <stop offset="0.62" stop-color="#122126"/>
+      <stop offset="1" stop-color="#071114"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="92" y1="82" x2="420" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2DE2E6"/>
+      <stop offset="0.55" stop-color="#A8FFCB"/>
+      <stop offset="1" stop-color="#F9F871"/>
+    </linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bg)"/>
+  <path d="M86 380c58 58 152 72 226 34 84-43 121-143 84-230C360 100 269 53 182 77 91 101 35 191 54 282" fill="none" stroke="#2DE2E6" stroke-opacity="0.16" stroke-width="18" stroke-linecap="round"/>
+  <g fill="none" stroke="url(#stroke)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <path d="M128 362V150l142 212V150"/>
+    <path d="M310 150h102"/>
+    <path d="M310 256h82"/>
+    <path d="M310 362h102"/>
+    <path d="M414 362l46-212 46 212"/>
+    <path d="M430 288h60"/>
+    <path d="M118 402h292"/>
+  </g>
+  <g fill="#071114" stroke-width="10">
+    <circle cx="92" cy="116" r="18" stroke="#2DE2E6"/>
+    <circle cx="290" cy="96" r="18" stroke="#2DE2E6"/>
+    <circle cx="436" cy="122" r="18" stroke="#F9F871"/>
+    <circle cx="448" cy="388" r="18" stroke="#F9F871"/>
+  </g>
+</svg>
