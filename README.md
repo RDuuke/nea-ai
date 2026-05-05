@@ -71,10 +71,12 @@ openspec/
 
 ## Estado
 
+Todos los comandos emiten JSON en stdout.
+
 ```bash
-go run ./cmd/nea-ai status --agent codex --json
-go run ./cmd/nea-ai status --agent opencode --json
-go run ./cmd/nea-ai status --agent claude-code --json
+go run ./cmd/nea-ai status --agent codex
+go run ./cmd/nea-ai status --agent opencode
+go run ./cmd/nea-ai status --agent claude-code
 ```
 
 ## Flow
@@ -82,7 +84,7 @@ go run ./cmd/nea-ai status --agent claude-code --json
 Ver estado OpenSpec/Flow-NEA del proyecto actual:
 
 ```bash
-go run ./cmd/nea-ai flow status --json
+go run ./cmd/nea-ai flow status
 ```
 
 Crear un quick blueprint para un cambio chico:
@@ -116,10 +118,34 @@ borra configuracion ajena del usuario.
 
 ## Build De Release
 
-Ejemplo Windows:
+Build local con version inyectada:
 
 ```bash
 go build -ldflags "-X nea-ai/internal/app.Version=v0.2.0" -o dist/nea-ai-windows-amd64.exe ./cmd/nea-ai
+```
+
+O via Makefile:
+
+```bash
+make build VERSION=v0.2.0
+```
+
+### Release Automatico
+
+Al empujar un tag `v*` el workflow `.github/workflows/release.yml` corre
+GoReleaser y publica artefactos para `linux|darwin|windows` x `amd64|arm64`,
+mas `checksums.txt`.
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Validar la configuracion antes de tagear:
+
+```bash
+goreleaser check
+goreleaser release --snapshot --clean
 ```
 
 ## Alcance Actual
