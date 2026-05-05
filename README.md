@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/brand/nea-ai-logo.svg" alt="NEA AI" width="720">
+</p>
+
 # NEA AI
 
 NEA AI es un control plane local-first para agentes de desarrollo con IA.
@@ -38,6 +42,18 @@ Planeado:
 
 - `brain`: instala/configura NeaBrain como MCP server.
 - `flow`: instala Flow-NEA skills, prompts y commands para el agente.
+
+## Branding
+
+Assets versionados:
+
+- `assets/brand/nea-ai-logo.svg`
+- `assets/brand/nea-ai-mark.svg`
+- `assets/brand/nea-ai-icon.svg`
+
+La marca combina el lenguaje visual de NEA Brain/Flow con el sentido local de
+"nea" en Medellin: identidad de barrio, resiliencia, amistad y confianza urbana
+aplicadas a un control plane tecnico.
 
 Repos base:
 

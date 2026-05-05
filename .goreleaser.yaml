@@ -41,6 +41,7 @@ archives:
     files:
       - README.md
       - LICENSE
+      - assets/brand/*.svg
 
 checksum:
   name_template: checksums.txt

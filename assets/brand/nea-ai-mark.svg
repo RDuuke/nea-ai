@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">NEA AI mark</title>
+  <desc id="desc">A neon cyan and yellow NEA control-plane monogram with connected nodes.</desc>
+  <defs>
+    <linearGradient id="nea-ai-stroke" x1="30" y1="42" x2="226" y2="214" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2DE2E6"/>
+      <stop offset="0.52" stop-color="#A8FFCB"/>
+      <stop offset="1" stop-color="#F9F871"/>
+    </linearGradient>
+    <radialGradient id="nea-ai-glow" cx="50%" cy="50%" r="58%">
+      <stop offset="0" stop-color="#2DE2E6" stop-opacity="0.34"/>
+      <stop offset="0.58" stop-color="#A8FFCB" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#071114" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="#071114"/>
+  <circle cx="128" cy="128" r="112" fill="url(#nea-ai-glow)"/>
+  <g fill="none" stroke="url(#nea-ai-stroke)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft-glow)">
+    <path d="M58 184V72l74 112V72"/>
+    <path d="M154 72h58"/>
+    <path d="M154 128h46"/>
+    <path d="M154 184h58"/>
+    <path d="M212 184l24-112 24 112"/>
+    <path d="M220 148h32"/>
+    <path d="M52 202h152"/>
+  </g>
+  <g fill="none" stroke="#2DE2E6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.82">
+    <path d="M58 72H34V46"/>
+    <path d="M132 72h22V46"/>
+    <path d="M88 118H42"/>
+    <path d="M156 184v26h-30"/>
+  </g>
+  <g fill="none" stroke="#F9F871" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.86">
+    <path d="M212 72h20V48"/>
+    <path d="M212 184h22v-24"/>
+  </g>
+  <g fill="#071114" stroke-width="5">
+    <circle cx="34" cy="46" r="9" stroke="#2DE2E6"/>
+    <circle cx="154" cy="46" r="9" stroke="#2DE2E6"/>
+    <circle cx="42" cy="118" r="9" stroke="#2DE2E6"/>
+    <circle cx="126" cy="210" r="9" stroke="#2DE2E6"/>
+    <circle cx="232" cy="48" r="9" stroke="#F9F871"/>
+    <circle cx="234" cy="160" r="9" stroke="#F9F871"/>
+  </g>
+</svg>
