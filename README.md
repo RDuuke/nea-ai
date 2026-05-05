@@ -39,6 +39,11 @@ Planeado:
 - `brain`: instala/configura NeaBrain como MCP server.
 - `flow`: instala Flow-NEA skills, prompts y commands para el agente.
 
+Repos base:
+
+- NeaBrain: https://github.com/RDuuke/nea-brain
+- Flow-NEA: https://github.com/RDuuke/sdd-nea-flow
+
 ## Instalacion
 
 Desde este repositorio:
@@ -78,6 +83,12 @@ Ver estado OpenSpec/Flow-NEA del proyecto actual:
 
 ```bash
 go run ./cmd/nea-ai flow status --json
+```
+
+Crear un quick blueprint para un cambio chico:
+
+```bash
+go run ./cmd/nea-ai flow quick fix-readme --title "ajustar readme" --objective "Mejorar documentacion publica"
 ```
 
 ## Doctor
@@ -123,6 +134,7 @@ El MVP actual cubre:
 - instalacion Flow-NEA
 - bootstrap OpenSpec
 - `flow status`
+- `flow quick`
 - `status`
 - `doctor`
 - `doctor --fix`

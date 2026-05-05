@@ -2,14 +2,14 @@
 
 ## Repos Revisados
 
-- `C:\Users\juandg\Desktop\RDuuqe\nea-brain`
-- `C:\Users\juandg\Desktop\RDuuqe\tdd-nea-flow`
+- https://github.com/RDuuke/nea-brain
+- https://github.com/RDuuke/sdd-nea-flow
 
 ## Lectura Corta
 
 `nea-brain` ya es el cerebro: memoria local-first para agentes IA.
 
-`tdd-nea-flow` ya es el metodo: flujo SDD con orquestador, sub-agentes, fases, OpenSpec y gates.
+`sdd-nea-flow` ya es el metodo: flujo SDD con orquestador, sub-agentes, fases, OpenSpec y gates.
 
 NEA AI propio debe unir esas 2 piezas con un instalador/control-plane:
 
@@ -85,7 +85,7 @@ internal/
   agents/              adapters claude/opencode/codex/cursor/vscode/gemini
   components/
     brain/             instala/configura NeaBrain
-    flow/              instala skills tdd-nea-flow
+    flow/              instala skills sdd-nea-flow
     mcp/               config MCP por agente
     persona/           instrucciones NEA
     permissions/       reglas seguras
@@ -94,7 +94,7 @@ internal/
   doctor/              health checks y fixers
   tui/                 dashboard
 assets/
-  skills/              copia vendorizada de tdd-nea-flow/skills
+  skills/              copia vendorizada de sdd-nea-flow/skills
   prompts/             AGENTS/CLAUDE/GEMINI/opencode examples
 ```
 
@@ -113,7 +113,7 @@ Inicializa proyecto:
 
 Instala en maquina:
 - binario `neabrain`
-- skills de `tdd-nea-flow`
+- skills de `sdd-nea-flow`
 - MCP config para agente seleccionado
 - prompts base NEA
 - backup antes de tocar configs
@@ -175,7 +175,7 @@ Copiar/adaptar de `nea-brain`:
 - config precedence
 - hexagonal style
 
-Copiar/adaptar de `tdd-nea-flow`:
+Copiar/adaptar de `sdd-nea-flow`:
 - skills completas
 - examples por herramienta
 - persistence contract
@@ -185,7 +185,7 @@ Copiar/adaptar de `tdd-nea-flow`:
 ## Lo Que No Conviene Hacer
 
 - No mezclar todo dentro de `nea-brain`. Mantener memoria como componente independiente.
-- No convertir `tdd-nea-flow` en app. Mantenerlo como paquete de skills/prompts.
+- No convertir `sdd-nea-flow` en app. Mantenerlo como paquete de skills/prompts.
 - No crear agente AI propio desde cero. Mejor configurar agentes existentes.
 - No meter web UI en MVP. Primero CLI/TUI.
 

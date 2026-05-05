@@ -163,7 +163,7 @@ func ResolveNeaBrain(workDir string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("neabrain binary not found in PATH or sibling repo; build C:\\Users\\juandg\\Desktop\\RDuuqe\\nea-brain first")
+	return "", fmt.Errorf("neabrain binary not found in PATH or sibling repo; build or install https://github.com/RDuuke/nea-brain")
 }
 
 func siblingCandidates(workDir string) []string {

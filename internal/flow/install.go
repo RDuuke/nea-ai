@@ -208,7 +208,7 @@ func ResolveFlowRepo(workDir string) (string, error) {
 			return candidate, nil
 		}
 	}
-	return "", fmt.Errorf("tdd-nea-flow repo not found next to %s", workDir)
+	return "", fmt.Errorf("sdd-nea-flow repo not found next to %s; clone https://github.com/RDuuke/sdd-nea-flow", workDir)
 }
 
 func copyTree(source string, target string) (int, error) {

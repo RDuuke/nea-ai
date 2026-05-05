@@ -57,3 +57,65 @@ func TestBuildMissingStatusRecommendsInit(t *testing.T) {
 		t.Fatal("expected recommendation")
 	}
 }
+
+func TestQuickCreatesBlueprintAndUpdatesStatus(t *testing.T) {
+	dir := initializedOpenSpec(t)
+
+	result, err := Quick(dir, QuickOptions{
+		Name:      "fix-readme",
+		Title:     "ajustar readme",
+		Objective: "Mejorar documentacion publica.",
+		Files:     []string{"README.md"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != "ok" {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "openspec", "changes", "fix-readme", "quick.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	status, err := Build(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Change != "fix-readme" || status.CurrentPhase != "QUICK" || !status.AwaitingApproval {
+		t.Fatalf("unexpected status: %+v", status)
+	}
+}
+
+func TestQuickRejectsActiveChange(t *testing.T) {
+	dir := initializedOpenSpec(t)
+	if _, err := Quick(dir, QuickOptions{Name: "first-change"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Quick(dir, QuickOptions{Name: "second-change"}); err == nil {
+		t.Fatal("expected active change error")
+	}
+}
+
+func initializedOpenSpec(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	statusDir := filepath.Join(dir, "openspec", "changes")
+	if err := os.MkdirAll(statusDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "openspec", "config.yaml"), []byte("project: test\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	status := `change: ""
+current_phase: INIT
+pending_tasks: []
+awaiting_approval: false
+completed: false
+modified_artifacts: []
+notes: "initialized"
+`
+	if err := os.WriteFile(filepath.Join(statusDir, ".status.yaml"), []byte(status), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}

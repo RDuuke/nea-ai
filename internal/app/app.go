@@ -116,8 +116,32 @@ func runFlow(args []string) (any, error) {
 			return nil, err
 		}
 		return flowstate.Build(workDir)
+	case "quick":
+		if len(args) < 2 {
+			return nil, fmt.Errorf("usage: nea-ai flow quick <change-name> [--title ...] [--objective ...]")
+		}
+		changeName := args[1]
+		fs := flag.NewFlagSet("flow quick", flag.ContinueOnError)
+		title := fs.String("title", "", "Quick title")
+		objective := fs.String("objective", "", "Quick objective")
+		files := fs.String("files", "", "Comma-separated affected files")
+		verify := fs.String("verify", "", "Comma-separated verification commands")
+		if err := fs.Parse(args[2:]); err != nil {
+			return nil, err
+		}
+		workDir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		return flowstate.Quick(workDir, flowstate.QuickOptions{
+			Name:         changeName,
+			Title:        *title,
+			Objective:    *objective,
+			Files:        splitComponents(*files),
+			Verification: splitComponents(*verify),
+		})
 	default:
-		return nil, fmt.Errorf("unsupported flow command %q; supported: status", args[0])
+		return nil, fmt.Errorf("unsupported flow command %q; supported: status, quick", args[0])
 	}
 }
 
@@ -215,6 +239,7 @@ Usage:
   nea-ai doctor [--fix] [--agent codex|opencode|claude-code]
   nea-ai init
   nea-ai flow status --json
+  nea-ai flow quick <change-name> [--title "..."] [--objective "..."]
   nea-ai install --agent codex|opencode|claude-code --components brain,flow
   nea-ai uninstall --agent codex|opencode|claude-code --components brain,flow
 
