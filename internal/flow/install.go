@@ -222,7 +222,7 @@ func copyTree(source string, target string) (int, error) {
 		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 			return err
 		}
-		if err := os.WriteFile(dest, data, 0o644); err != nil {
+		if err := os.WriteFile(dest, data, 0o600); err != nil {
 			return err
 		}
 		count++
@@ -251,7 +251,7 @@ func copyMarkdownFiles(source string, target string) (int, error) {
 		if err != nil {
 			return count, err
 		}
-		if err := os.WriteFile(filepath.Join(target, entry.Name()), data, 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(target, entry.Name()), data, 0o600); err != nil {
 			return count, err
 		}
 		count++
@@ -356,7 +356,7 @@ func installOpenCodeConfig(source string, target string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(target, append(data, '\n'), 0o644)
+	return os.WriteFile(target, append(data, '\n'), 0o600)
 }
 
 func uninstallOpenCodeConfig(target string) (bool, error) {
@@ -402,7 +402,7 @@ func uninstallOpenCodeConfig(target string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return true, os.WriteFile(target, append(out, '\n'), 0o644)
+	return true, os.WriteFile(target, append(out, '\n'), 0o600)
 }
 
 func getOrCreate(values map[string]any, key string) map[string]any {
@@ -423,7 +423,7 @@ func installProjectPrompt(source string, target string) (string, error) {
 
 	existing, err := os.ReadFile(target)
 	if os.IsNotExist(err) {
-		return "", os.WriteFile(target, []byte(block), 0o644)
+		return "", os.WriteFile(target, []byte(block), 0o600)
 	}
 	if err != nil {
 		return "", err
@@ -436,14 +436,14 @@ func installProjectPrompt(source string, target string) (string, error) {
 
 	if strings.Contains(text, markerStart) && strings.Contains(text, markerEnd) {
 		next := replaceMarkedBlock(text, block)
-		return backupPath, os.WriteFile(target, []byte(next), 0o644)
+		return backupPath, os.WriteFile(target, []byte(next), 0o600)
 	}
 
 	if strings.TrimSpace(text) != "" && !strings.HasSuffix(text, "\n") {
 		text += "\n"
 	}
 	text += "\n" + block
-	return backupPath, os.WriteFile(target, []byte(text), 0o644)
+	return backupPath, os.WriteFile(target, []byte(text), 0o600)
 }
 
 func uninstallProjectPrompt(target string) (string, error) {
@@ -463,7 +463,7 @@ func uninstallProjectPrompt(target string) (string, error) {
 		return "", err
 	}
 	next := replaceMarkedBlock(text, "")
-	return backupPath, os.WriteFile(target, []byte(next), 0o644)
+	return backupPath, os.WriteFile(target, []byte(next), 0o600)
 }
 
 func replaceMarkedBlock(text string, block string) string {
