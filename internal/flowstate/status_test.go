@@ -63,7 +63,7 @@ func TestQuickCreatesBlueprintAndUpdatesStatus(t *testing.T) {
 
 	result, err := Quick(dir, QuickOptions{
 		Name:      "fix-readme",
-		Title:     "ajustar readme",
+		Title:     "adjust readme",
 		Objective: "Improve public documentation.",
 		Files:     []string{"README.md"},
 	})
@@ -93,6 +93,107 @@ func TestQuickRejectsActiveChange(t *testing.T) {
 	}
 	if _, err := Quick(dir, QuickOptions{Name: "second-change"}); err == nil {
 		t.Fatal("expected active change error")
+	}
+}
+
+func TestExploreCreatesArtifactAndActivatesChange(t *testing.T) {
+	dir := initializedOpenSpec(t)
+
+	result, err := Explore(dir, PhaseOptions{
+		Name:      "add-flow-cli",
+		Objective: "Map flow phases to CLI commands.",
+		Files:     []string{"internal/app/app.go"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.CurrentPhase != "EXPLORE" || len(result.Artifacts) != 1 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "openspec", "changes", "add-flow-cli", "exploration.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	status, err := Build(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Change != "add-flow-cli" || status.CurrentPhase != "EXPLORE" || status.AwaitingApproval {
+		t.Fatalf("unexpected status: %+v", status)
+	}
+}
+
+func TestProposeCreatesArtifactAndRequiresApproval(t *testing.T) {
+	dir := initializedOpenSpec(t)
+	if _, err := Explore(dir, PhaseOptions{Name: "add-flow-cli"}); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := Propose(dir, PhaseOptions{
+		Name:    "add-flow-cli",
+		Summary: "Add bounded native CLI phase commands.",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.CurrentPhase != "PROPOSE" || len(result.Artifacts) != 1 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+
+	status, err := Build(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Change != "add-flow-cli" || status.CurrentPhase != "PROPOSE" || !status.AwaitingApproval {
+		t.Fatalf("unexpected status: %+v", status)
+	}
+}
+
+func TestContinueReportsNextCommand(t *testing.T) {
+	dir := initializedOpenSpec(t)
+	if _, err := Explore(dir, PhaseOptions{Name: "add-flow-cli"}); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := Continue(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.NextPhase != "PROPOSE" {
+		t.Fatalf("next phase = %q, want PROPOSE", result.NextPhase)
+	}
+	if result.NextRecommended == "" {
+		t.Fatal("expected next recommendation")
+	}
+}
+
+func TestVerifyWritesReportAndCompletesChange(t *testing.T) {
+	dir := initializedOpenSpec(t)
+	if _, err := Explore(dir, PhaseOptions{Name: "add-flow-cli"}); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := Verify(dir, PhaseOptions{
+		Name:     "add-flow-cli",
+		Summary:  "All checks passed.",
+		Commands: []string{"go test ./..."},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.CurrentPhase != "VERIFY" || len(result.Artifacts) != 1 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "openspec", "changes", "add-flow-cli", "verify-report.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	status, err := Build(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Change != "add-flow-cli" || status.CurrentPhase != "VERIFY" || !status.Completed {
+		t.Fatalf("unexpected status: %+v", status)
 	}
 }
 
