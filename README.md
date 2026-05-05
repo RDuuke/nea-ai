@@ -141,9 +141,10 @@ make build VERSION=v0.2.0
 
 ### Release Automatico
 
-Al empujar un tag `v*` el workflow `.github/workflows/release.yml` corre
-GoReleaser y publica artefactos para `linux|darwin|windows` x `amd64|arm64`,
-mas `checksums.txt`.
+El release usa `.goreleaser.yaml`. En pull requests que tocan release, CLI o
+Go module, `.github/workflows/release.yml` ejecuta `goreleaser check`. Al
+empujar un tag `v*`, el mismo workflow corre GoReleaser y publica artefactos
+para `linux|darwin|windows` x `amd64|arm64`, mas `checksums.txt`.
 
 ```bash
 git tag v0.2.0
