@@ -4,7 +4,6 @@
 
 - `C:\Users\juandg\Desktop\RDuuqe\nea-brain`
 - `C:\Users\juandg\Desktop\RDuuqe\tdd-nea-flow`
-- referencia previa: `Gentleman-Programming/gentle-ai`
 
 ## Lectura Corta
 
@@ -12,9 +11,7 @@
 
 `tdd-nea-flow` ya es el metodo: flujo SDD con orquestador, sub-agentes, fases, OpenSpec y gates.
 
-`gentle-ai` muestra el producto empaquetado: instalador/sincronizador multi-agente con TUI, adapters, backups y config por agente.
-
-NEA AI propio debe unir esas 3 ideas:
+NEA AI propio debe unir esas 2 piezas con un instalador/control-plane:
 
 ```text
 NEA AI = installer + flow + memory + agent control plane
@@ -63,17 +60,6 @@ Valor:
 - artifacts versionables
 - retries, approvals, verify, archive
 - quick path para fixes chicos
-
-### Gentle AI
-
-Valor:
-- instalador real
-- adapters por agente
-- TUI de seleccion
-- backup/restore
-- sync de config
-- skills embebidas
-- modelo de componentes
 
 ## Producto Propuesto
 
@@ -177,9 +163,8 @@ Base recomendada: Go CLI, no Node.
 
 Razon:
 - `nea-brain` ya es Go
-- `gentle-ai` ya muestra instalador Go viable
 - single binary simplifica Windows
-- Bubble Tea ya existe en ambos mundos
+- Go facilita CLI/TUI futura con un binario unico
 
 ## Reuso Recomendado
 
@@ -196,13 +181,6 @@ Copiar/adaptar de `tdd-nea-flow`:
 - persistence contract
 - OpenSpec structure
 - phase output contract
-
-Copiar/adaptar de `gentle-ai`:
-- component registry
-- agent adapters
-- backup/restore
-- pipeline staged install
-- TUI installer
 
 ## Lo Que No Conviene Hacer
 
@@ -273,4 +251,3 @@ Definition of Done:
 ## Proyecto En Una Frase
 
 NEA AI debe ser el **control plane local-first para agentes de desarrollo**: memoria, flujo, configuracion, verificacion y recuperacion en un solo binario.
-
