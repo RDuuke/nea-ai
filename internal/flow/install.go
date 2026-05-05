@@ -31,6 +31,20 @@ type InstallResult struct {
 	FilesCopied      int               `json:"files_copied"`
 }
 
+type UninstallOptions struct {
+	Agent      model.AgentID
+	WorkingDir string
+}
+
+type UninstallResult struct {
+	Agent            model.AgentID     `json:"agent"`
+	Component        model.ComponentID `json:"component"`
+	SkillsTarget     string            `json:"skills_target"`
+	ProjectPrompt    string            `json:"project_prompt"`
+	ProjectPromptBak string            `json:"project_prompt_backup,omitempty"`
+	FilesRemoved     int               `json:"files_removed"`
+}
+
 func Install(options InstallOptions) (InstallResult, error) {
 	if options.Agent == "" {
 		options.Agent = model.AgentCodex
@@ -87,6 +101,53 @@ func Install(options InstallOptions) (InstallResult, error) {
 		ProjectPrompt:    promptTarget,
 		ProjectPromptBak: backupPath,
 		FilesCopied:      filesCopied,
+	}, nil
+}
+
+func Uninstall(options UninstallOptions) (UninstallResult, error) {
+	if options.Agent == "" {
+		options.Agent = model.AgentCodex
+	}
+	if !supportedAgent(options.Agent) {
+		return UninstallResult{}, fmt.Errorf("flow uninstall does not support agent %q", options.Agent)
+	}
+
+	paths, err := system.ResolvePaths()
+	if err != nil {
+		return UninstallResult{}, err
+	}
+	if options.WorkingDir == "" {
+		options.WorkingDir = paths.WorkDir
+	}
+
+	layout := agentLayout(paths.HomeDir, options.WorkingDir, options.Agent)
+	removed, err := removeKnownFlowFiles(layout.skillsTarget, layout.commandsTarget)
+	if err != nil {
+		return UninstallResult{}, err
+	}
+	if options.Agent == model.AgentOpenCode {
+		if changed, err := uninstallOpenCodeConfig(filepath.Join(paths.HomeDir, ".config", "opencode", "config.json")); err != nil {
+			return UninstallResult{}, err
+		} else if changed {
+			removed++
+		}
+	}
+
+	backupPath, err := uninstallProjectPrompt(layout.promptTarget)
+	if err != nil {
+		return UninstallResult{}, err
+	}
+	if backupPath != "" {
+		removed++
+	}
+
+	return UninstallResult{
+		Agent:            options.Agent,
+		Component:        model.ComponentFlow,
+		SkillsTarget:     layout.skillsTarget,
+		ProjectPrompt:    layout.promptTarget,
+		ProjectPromptBak: backupPath,
+		FilesRemoved:     removed,
 	}, nil
 }
 
@@ -208,6 +269,66 @@ func copyMarkdownFiles(source string, target string) (int, error) {
 	return count, nil
 }
 
+func removeKnownFlowFiles(skillsTarget string, commandsTarget string) (int, error) {
+	removed := 0
+	for _, name := range []string{
+		"flow-nea-apply",
+		"flow-nea-archive",
+		"flow-nea-continue",
+		"flow-nea-design",
+		"flow-nea-explore",
+		"flow-nea-init",
+		"flow-nea-propose",
+		"flow-nea-quick",
+		"flow-nea-spec",
+		"flow-nea-tasks",
+		"flow-nea-verify",
+		"judgment-day",
+		"skill-creator",
+		"skill-registry",
+		"_shared",
+	} {
+		if ok, err := removeIfExists(filepath.Join(skillsTarget, name)); err != nil {
+			return removed, err
+		} else if ok {
+			removed++
+		}
+	}
+	if commandsTarget != "" {
+		for _, name := range []string{
+			"flow-nea-apply.md",
+			"flow-nea-archive.md",
+			"flow-nea-continue.md",
+			"flow-nea-design.md",
+			"flow-nea-explore.md",
+			"flow-nea-ff.md",
+			"flow-nea-fix.md",
+			"flow-nea-init.md",
+			"flow-nea-judgment.md",
+			"flow-nea-propose.md",
+			"flow-nea-quick.md",
+			"flow-nea-spec.md",
+			"flow-nea-tasks.md",
+			"flow-nea-verify.md",
+			"skill-registry.md",
+		} {
+			if ok, err := removeIfExists(filepath.Join(commandsTarget, name)); err != nil {
+				return removed, err
+			} else if ok {
+				removed++
+			}
+		}
+	}
+	return removed, nil
+}
+
+func removeIfExists(path string) (bool, error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, os.RemoveAll(path)
+}
+
 func installOpenCodeConfig(source string, target string) error {
 	sourceData, err := os.ReadFile(source)
 	if err != nil {
@@ -246,6 +367,52 @@ func installOpenCodeConfig(source string, target string) error {
 		return err
 	}
 	return os.WriteFile(target, append(data, '\n'), 0o644)
+}
+
+func uninstallOpenCodeConfig(target string) (bool, error) {
+	data, err := os.ReadFile(target)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	var config map[string]any
+	if err := json.Unmarshal(data, &config); err != nil {
+		return false, nil
+	}
+	agents, ok := config["agent"].(map[string]any)
+	if !ok {
+		return false, nil
+	}
+	changed := false
+	for _, name := range []string{
+		"flow-nea-orchestrator",
+		"flow-nea-explore",
+		"flow-nea-propose",
+		"flow-nea-spec",
+		"flow-nea-design",
+		"flow-nea-tasks",
+		"flow-nea-apply",
+		"flow-nea-verify",
+		"flow-nea-archive",
+		"judgment-day-a",
+		"judgment-day-b",
+		"default",
+	} {
+		if _, ok := agents[name]; ok {
+			delete(agents, name)
+			changed = true
+		}
+	}
+	if !changed {
+		return false, nil
+	}
+	out, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return false, err
+	}
+	return true, os.WriteFile(target, append(out, '\n'), 0o644)
 }
 
 func getOrCreate(values map[string]any, key string) map[string]any {
@@ -287,6 +454,26 @@ func installProjectPrompt(source string, target string) (string, error) {
 	}
 	text += "\n" + block
 	return backupPath, os.WriteFile(target, []byte(text), 0o644)
+}
+
+func uninstallProjectPrompt(target string) (string, error) {
+	data, err := os.ReadFile(target)
+	if os.IsNotExist(err) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	text := string(data)
+	if !strings.Contains(text, markerStart) || !strings.Contains(text, markerEnd) {
+		return "", nil
+	}
+	backupPath, err := backupFile(target, data)
+	if err != nil {
+		return "", err
+	}
+	next := replaceMarkedBlock(text, "")
+	return backupPath, os.WriteFile(target, []byte(next), 0o644)
 }
 
 func replaceMarkedBlock(text string, block string) string {

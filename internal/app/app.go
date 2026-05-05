@@ -59,6 +59,12 @@ func Run(args []string, stdout io.Writer) error {
 			return err
 		}
 		return writeJSON(stdout, result)
+	case "uninstall":
+		result, err := runUninstall(args[1:])
+		if err != nil {
+			return err
+		}
+		return writeJSON(stdout, result)
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -116,6 +122,39 @@ func runInstall(args []string) (InstallReport, error) {
 	return report, nil
 }
 
+type UninstallReport struct {
+	Components map[model.ComponentID]any `json:"components"`
+}
+
+func runUninstall(args []string) (UninstallReport, error) {
+	fs := flag.NewFlagSet("uninstall", flag.ContinueOnError)
+	agent := fs.String("agent", string(model.AgentCodex), "Agent to configure")
+	componentList := fs.String("components", string(model.ComponentBrain), "Comma-separated components")
+	if err := fs.Parse(args); err != nil {
+		return UninstallReport{}, err
+	}
+	paths, err := system.ResolvePaths()
+	if err != nil {
+		return UninstallReport{}, err
+	}
+	registry := components.DefaultRegistry()
+	ctx := components.ContextFromPaths(paths, model.AgentID(*agent))
+	report := UninstallReport{Components: map[model.ComponentID]any{}}
+	for _, component := range splitComponents(*componentList) {
+		id := model.ComponentID(component)
+		installer, ok := registry.Get(id)
+		if !ok {
+			return UninstallReport{}, fmt.Errorf("unsupported component %q", component)
+		}
+		result, err := installer.Uninstall(ctx)
+		if err != nil {
+			return UninstallReport{}, err
+		}
+		report.Components[id] = result
+	}
+	return report, nil
+}
+
 func splitComponents(raw string) []string {
 	parts := strings.Split(raw, ",")
 	out := make([]string, 0, len(parts))
@@ -144,6 +183,7 @@ Usage:
   nea-ai doctor [--agent codex|opencode|claude-code]
   nea-ai init
   nea-ai install --agent codex|opencode|claude-code --components brain,flow
+  nea-ai uninstall --agent codex|opencode|claude-code --components brain,flow
 
-Foundation commands are implemented: version, status, doctor, init, install brain/flow for codex, opencode, and claude-code.`)
+Foundation commands are implemented: version, status, doctor, init, install/uninstall brain/flow for codex, opencode, and claude-code.`)
 }

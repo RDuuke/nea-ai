@@ -29,6 +29,21 @@ type InstallResult struct {
 	CommandOutput string            `json:"command_output"`
 }
 
+type UninstallOptions struct {
+	Agent      model.AgentID
+	Component  model.ComponentID
+	WorkingDir string
+}
+
+type UninstallResult struct {
+	Agent         model.AgentID     `json:"agent"`
+	Component     model.ComponentID `json:"component"`
+	NeaBrainPath  string            `json:"neabrain_path"`
+	ConfigPath    string            `json:"config_path"`
+	BackupPath    string            `json:"backup_path,omitempty"`
+	CommandOutput string            `json:"command_output"`
+}
+
 func Install(options InstallOptions) (InstallResult, error) {
 	if options.Agent == "" {
 		options.Agent = model.AgentCodex
@@ -69,6 +84,55 @@ func Install(options InstallOptions) (InstallResult, error) {
 	}
 
 	return InstallResult{
+		Agent:         options.Agent,
+		Component:     options.Component,
+		NeaBrainPath:  brainPath,
+		ConfigPath:    configPath,
+		BackupPath:    backupPath,
+		CommandOutput: strings.TrimSpace(string(output)),
+	}, nil
+}
+
+func Uninstall(options UninstallOptions) (UninstallResult, error) {
+	if options.Agent == "" {
+		options.Agent = model.AgentCodex
+	}
+	if options.Component == "" {
+		options.Component = model.ComponentBrain
+	}
+	if !supportedAgent(options.Agent) {
+		return UninstallResult{}, fmt.Errorf("brain uninstall does not support agent %q", options.Agent)
+	}
+	if options.Component != model.ComponentBrain {
+		return UninstallResult{}, fmt.Errorf("unsupported component %q", options.Component)
+	}
+
+	paths, err := system.ResolvePaths()
+	if err != nil {
+		return UninstallResult{}, err
+	}
+	if options.WorkingDir == "" {
+		options.WorkingDir = paths.WorkDir
+	}
+
+	brainPath, err := ResolveNeaBrain(options.WorkingDir)
+	if err != nil {
+		return UninstallResult{}, err
+	}
+
+	configPath := agents.ConfigPath(paths.HomeDir, options.Agent)
+	backupPath, err := backupIfExists(configPath)
+	if err != nil {
+		return UninstallResult{}, err
+	}
+
+	cmd := exec.Command(brainPath, "setup", string(options.Agent), "--uninstall")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return UninstallResult{}, fmt.Errorf("run neabrain setup uninstall: %w\n%s", err, strings.TrimSpace(string(output)))
+	}
+
+	return UninstallResult{
 		Agent:         options.Agent,
 		Component:     options.Component,
 		NeaBrainPath:  brainPath,

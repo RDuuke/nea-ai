@@ -43,6 +43,7 @@ type Check struct {
 type Component interface {
 	ID() model.ComponentID
 	Install(InstallContext) (any, error)
+	Uninstall(InstallContext) (any, error)
 	Detect(InstallContext) Status
 	Checks(InstallContext) []Check
 }
@@ -118,6 +119,18 @@ func (brainComponent) Install(ctx InstallContext) (any, error) {
 	return result, nil
 }
 
+func (brainComponent) Uninstall(ctx InstallContext) (any, error) {
+	result, err := brain.Uninstall(brain.UninstallOptions{
+		Agent:      ctx.Agent,
+		Component:  model.ComponentBrain,
+		WorkingDir: ctx.WorkDir,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (brainComponent) Detect(ctx InstallContext) Status {
 	brainPath, _ := brain.ResolveNeaBrain(ctx.WorkDir)
 	configPath := agents.ConfigPath(ctx.HomeDir, ctx.Agent)
@@ -160,11 +173,22 @@ func (flowComponent) Install(ctx InstallContext) (any, error) {
 	return result, nil
 }
 
+func (flowComponent) Uninstall(ctx InstallContext) (any, error) {
+	result, err := flow.Uninstall(flow.UninstallOptions{
+		Agent:      ctx.Agent,
+		WorkingDir: ctx.WorkDir,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (flowComponent) Detect(ctx InstallContext) Status {
 	skillsPath := flowSkillsPath(ctx.HomeDir, ctx.Agent)
 	projectPromptPath := flowPromptPath(ctx.HomeDir, ctx.WorkDir, ctx.Agent)
 	skillsPresent := exists(skillsPath)
-	promptPresent := exists(projectPromptPath)
+	promptPresent := fileContains(projectPromptPath, "<!-- nea-ai:flow-codex:start -->")
 	return Status{
 		ID:        model.ComponentFlow,
 		Present:   skillsPresent || promptPresent,
@@ -182,7 +206,7 @@ func (component flowComponent) Checks(ctx InstallContext) []Check {
 	agentName := string(ctx.Agent)
 	return []Check{
 		checkBool("flow.skills."+agentName, fileExists(status.Details["skills_path"], "SKILL.md"), "NEA Flow skills installed for "+agentName, "NEA Flow skills missing; run `nea-ai install --agent "+agentName+" --components flow`"),
-		checkBool("flow.prompt."+agentName, exists(status.Details["project_prompt_path"]), "NEA Flow prompt present for "+agentName, "NEA Flow prompt missing; run `nea-ai install --agent "+agentName+" --components flow`"),
+		checkBool("flow.prompt."+agentName, fileContains(status.Details["project_prompt_path"], "<!-- nea-ai:flow-codex:start -->"), "NEA Flow prompt present for "+agentName, "NEA Flow prompt missing; run `nea-ai install --agent "+agentName+" --components flow`"),
 	}
 }
 
