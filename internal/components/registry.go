@@ -150,8 +150,10 @@ func (brainComponent) Detect(ctx InstallContext) Status {
 func (component brainComponent) Checks(ctx InstallContext) []Check {
 	status := component.Detect(ctx)
 	agentName := string(ctx.Agent)
+	ping := brain.PingMCP(ctx.WorkDir)
 	return []Check{
 		checkBool("neabrain.binary", status.Present, "neabrain binary resolved", "neabrain binary not found in PATH or sibling repo"),
+		checkBool("neabrain.mcp_ping", ping.OK, "NeaBrain MCP responded to tools/list", "NeaBrain MCP ping failed: "+ping.ErrorText),
 		checkBool(agentName+".neabrain_mcp", status.Installed, agentName+" NeaBrain MCP configured", agentName+" NeaBrain MCP missing; run `nea-ai install --agent "+agentName+" --components brain`"),
 	}
 }
