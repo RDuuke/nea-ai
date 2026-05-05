@@ -10,6 +10,7 @@ import (
 
 	"nea-ai/internal/components"
 	"nea-ai/internal/doctor"
+	"nea-ai/internal/flowstate"
 	"nea-ai/internal/model"
 	"nea-ai/internal/openspec"
 	"nea-ai/internal/status"
@@ -53,6 +54,12 @@ func Run(args []string, stdout io.Writer) error {
 			return err
 		}
 		return writeJSON(stdout, result)
+	case "flow":
+		result, err := runFlow(args[1:])
+		if err != nil {
+			return err
+		}
+		return writeJSON(stdout, result)
 	case "install":
 		result, err := runInstall(args[1:])
 		if err != nil {
@@ -91,6 +98,27 @@ func runDoctorValue(args []string) (any, error) {
 		return doctor.FixForAgent(Version, model.AgentID(*agent))
 	}
 	return doctor.RunForAgent(Version, model.AgentID(*agent))
+}
+
+func runFlow(args []string) (any, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("missing flow command; supported: status")
+	}
+	switch args[0] {
+	case "status":
+		fs := flag.NewFlagSet("flow status", flag.ContinueOnError)
+		_ = fs.Bool("json", true, "Write JSON output")
+		if err := fs.Parse(args[1:]); err != nil {
+			return nil, err
+		}
+		workDir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		return flowstate.Build(workDir)
+	default:
+		return nil, fmt.Errorf("unsupported flow command %q; supported: status", args[0])
+	}
 }
 
 type InstallReport struct {
@@ -186,6 +214,7 @@ Usage:
   nea-ai status --json [--agent codex|opencode|claude-code]
   nea-ai doctor [--fix] [--agent codex|opencode|claude-code]
   nea-ai init
+  nea-ai flow status --json
   nea-ai install --agent codex|opencode|claude-code --components brain,flow
   nea-ai uninstall --agent codex|opencode|claude-code --components brain,flow
 

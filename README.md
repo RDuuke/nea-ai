@@ -72,6 +72,14 @@ go run ./cmd/nea-ai status --agent opencode --json
 go run ./cmd/nea-ai status --agent claude-code --json
 ```
 
+## Flow
+
+Ver estado OpenSpec/Flow-NEA del proyecto actual:
+
+```bash
+go run ./cmd/nea-ai flow status --json
+```
+
 ## Doctor
 
 Validar instalacion:
@@ -114,6 +122,7 @@ El MVP actual cubre:
 - configuracion MCP NeaBrain
 - instalacion Flow-NEA
 - bootstrap OpenSpec
+- `flow status`
 - `status`
 - `doctor`
 - `doctor --fix`
