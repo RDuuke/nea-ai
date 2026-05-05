@@ -79,7 +79,7 @@ func ensureFile(path string, content string) (bool, error) {
 	if !os.IsNotExist(err) {
 		return false, err
 	}
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		return false, err
 	}
 	return true, nil
