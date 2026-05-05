@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
 project_name: nea-ai
@@ -23,30 +24,32 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      - -X nea-ai/internal/app.Version={{.Version}}
+      - -X nea-ai/internal/app.Version={{ .Version }}
 
 archives:
   - id: nea-ai
-    builds:
+    ids:
       - nea-ai
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    formats:
+      - tar.gz
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     files:
-      - LICENSE
       - README.md
+      - LICENSE
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: checksums.txt
   algorithm: sha256
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-snapshot"
+  version_template: "{{ incpatch .Version }}-snapshot"
 
 changelog:
-  use: github
   sort: asc
   filters:
     exclude:
@@ -67,4 +70,4 @@ changelog:
 release:
   draft: false
   prerelease: auto
-  name_template: "v{{.Version}}"
+  name_template: "v{{ .Version }}"
