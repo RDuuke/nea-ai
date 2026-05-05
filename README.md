@@ -93,6 +93,15 @@ Crear un quick blueprint para un cambio chico:
 go run ./cmd/nea-ai flow quick fix-readme --title "ajustar readme" --objective "Mejorar documentacion publica"
 ```
 
+Crear artefactos OpenSpec para fases de Flow-NEA:
+
+```bash
+go run ./cmd/nea-ai flow explore add-feature --objective "Understand the change"
+go run ./cmd/nea-ai flow propose add-feature --summary "Bounded implementation plan"
+go run ./cmd/nea-ai flow continue
+go run ./cmd/nea-ai flow verify add-feature --summary "CI passed" --commands "go test ./..."
+```
+
 ## Doctor
 
 Validar instalacion:
@@ -161,6 +170,10 @@ El MVP actual cubre:
 - bootstrap OpenSpec
 - `flow status`
 - `flow quick`
+- `flow explore`
+- `flow propose`
+- `flow continue`
+- `flow verify`
 - `status`
 - `doctor`
 - `doctor --fix`

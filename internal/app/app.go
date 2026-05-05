@@ -112,7 +112,7 @@ func runDoctorValue(args []string) (any, error) {
 
 func runFlow(args []string) (any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("missing flow command; supported: status, quick")
+		return nil, fmt.Errorf("missing flow command; supported: status, quick, explore, propose, continue, verify")
 	}
 	switch args[0] {
 	case "status":
@@ -149,9 +149,85 @@ func runFlow(args []string) (any, error) {
 			Files:        splitComponents(*files),
 			Verification: splitComponents(*verify),
 		})
+	case "explore":
+		if len(args) < 2 {
+			return nil, fmt.Errorf("usage: nea-ai flow explore <change-name> [--title ...] [--objective ...] [--summary ...] [--files ...]")
+		}
+		changeName := args[1]
+		options, err := parseFlowPhaseOptions("flow explore", changeName, args[2:])
+		if err != nil {
+			return nil, err
+		}
+		workDir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		return flowstate.Explore(workDir, options)
+	case "propose":
+		if len(args) < 2 {
+			return nil, fmt.Errorf("usage: nea-ai flow propose <change-name> [--title ...] [--objective ...] [--summary ...] [--files ...]")
+		}
+		changeName := args[1]
+		options, err := parseFlowPhaseOptions("flow propose", changeName, args[2:])
+		if err != nil {
+			return nil, err
+		}
+		workDir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		return flowstate.Propose(workDir, options)
+	case "continue":
+		fs := flag.NewFlagSet("flow continue", flag.ContinueOnError)
+		if err := fs.Parse(args[1:]); err != nil {
+			return nil, err
+		}
+		workDir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		return flowstate.Continue(workDir)
+	case "verify":
+		changeName := ""
+		verifyArgs := args[1:]
+		if len(verifyArgs) > 0 && !strings.HasPrefix(verifyArgs[0], "-") {
+			changeName = verifyArgs[0]
+			verifyArgs = verifyArgs[1:]
+		}
+		options, err := parseFlowPhaseOptions("flow verify", changeName, verifyArgs)
+		if err != nil {
+			return nil, err
+		}
+		workDir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		return flowstate.Verify(workDir, options)
 	default:
-		return nil, fmt.Errorf("unsupported flow command %q; supported: status, quick", args[0])
+		return nil, fmt.Errorf("unsupported flow command %q; supported: status, quick, explore, propose, continue, verify", args[0])
 	}
+}
+
+func parseFlowPhaseOptions(name string, changeName string, args []string) (flowstate.PhaseOptions, error) {
+	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	title := fs.String("title", "", "Phase title")
+	objective := fs.String("objective", "", "Phase objective")
+	summary := fs.String("summary", "", "Phase summary")
+	files := fs.String("files", "", "Comma-separated affected files")
+	commands := fs.String("commands", "", "Comma-separated verification commands")
+	risks := fs.String("risks", "", "Comma-separated risks")
+	if err := fs.Parse(args); err != nil {
+		return flowstate.PhaseOptions{}, err
+	}
+	return flowstate.PhaseOptions{
+		Name:      changeName,
+		Title:     *title,
+		Objective: *objective,
+		Summary:   *summary,
+		Files:     splitComponents(*files),
+		Commands:  splitComponents(*commands),
+		Risks:     splitComponents(*risks),
+	}, nil
 }
 
 type InstallReport struct {
@@ -285,10 +361,14 @@ Usage:
   nea-ai init
   nea-ai flow status
   nea-ai flow quick <change-name> [--title "..."] [--objective "..."]
+  nea-ai flow explore <change-name> [--title "..."] [--objective "..."]
+  nea-ai flow propose <change-name> [--title "..."] [--objective "..."]
+  nea-ai flow continue
+  nea-ai flow verify <change-name> [--summary "..."] [--commands "..."]
   nea-ai install --agent codex|claude-code|opencode --components brain,flow
   nea-ai uninstall --agent codex|claude-code|opencode --components brain,flow
 
 All commands emit JSON on stdout. Foundation commands implemented: version,
-status, doctor, init, install/uninstall (brain,flow) and flow (status, quick)
-for codex, claude-code, and opencode.`)
+status, doctor, init, install/uninstall (brain,flow) and flow state/artifact
+commands for codex, claude-code, and opencode.`)
 }
