@@ -1,37 +1,47 @@
 # NEA AI
 
-NEA AI is a local-first control plane for AI development agents.
+NEA AI es un control plane local-first para agentes de desarrollo con IA.
 
-It installs and repairs the pieces needed to use persistent memory, structured
-Flow-NEA workflows, OpenSpec project state, and MCP configuration across
-supported coding agents.
+Su objetivo es preparar agentes existentes con memoria persistente, flujos de
+trabajo estructurados, estado OpenSpec, configuracion MCP, verificacion y
+recuperacion en un solo binario.
 
-## What It Does
+```text
+NEA AI = installer + NeaBrain memory + Flow-NEA + OpenSpec + doctor
+```
 
-- Configures NeaBrain MCP for supported agents.
-- Installs Flow-NEA skills, prompts, and commands.
-- Initializes OpenSpec project state.
-- Detects installed agents and component health.
-- Repairs missing agent configuration with `doctor --fix`.
-- Backs up touched config files before writing.
+## Que Hace
 
-## Supported Agents
+- Configura NeaBrain como servidor MCP para agentes soportados.
+- Instala skills, prompts y comandos de Flow-NEA.
+- Inicializa estado OpenSpec en proyectos.
+- Detecta agentes instalados y salud de componentes.
+- Repara configuracion faltante con `doctor --fix`.
+- Crea backups antes de tocar archivos de configuracion.
+- Desinstala solo entradas administradas por NEA AI.
 
-Current support:
+## Agentes Soportados
+
+Soporte actual:
 
 - Codex
 - OpenCode
 - Claude Code
 
-Planned:
+Planeado:
 
 - Cursor
 - VS Code
 - Gemini CLI
 
-## Install Components
+## Componentes
 
-From this repository:
+- `brain`: instala/configura NeaBrain como MCP server.
+- `flow`: instala Flow-NEA skills, prompts y commands para el agente.
+
+## Instalacion
+
+Desde este repositorio:
 
 ```bash
 go run ./cmd/nea-ai install --agent codex --components brain,flow
@@ -39,20 +49,13 @@ go run ./cmd/nea-ai install --agent opencode --components brain,flow
 go run ./cmd/nea-ai install --agent claude-code --components brain,flow
 ```
 
-Installed components:
-
-- `brain`: configures NeaBrain as an MCP server.
-- `flow`: installs Flow-NEA skills/prompts/commands for the selected agent.
-
-## Project Init
-
-Initialize OpenSpec state in the current project:
+## Inicializar Un Proyecto
 
 ```bash
 go run ./cmd/nea-ai init
 ```
 
-This creates:
+Crea:
 
 ```text
 openspec/
@@ -61,9 +64,7 @@ openspec/
     .status.yaml
 ```
 
-## Status
-
-Inspect machine and project state:
+## Estado
 
 ```bash
 go run ./cmd/nea-ai status --agent codex --json
@@ -73,44 +74,57 @@ go run ./cmd/nea-ai status --agent claude-code --json
 
 ## Doctor
 
-Validate an agent setup:
+Validar instalacion:
 
 ```bash
 go run ./cmd/nea-ai doctor --agent opencode
 ```
 
-Repair missing components:
+Reparar componentes faltantes:
 
 ```bash
 go run ./cmd/nea-ai doctor --fix --agent opencode
 ```
 
-## Uninstall
-
-Remove NEA AI managed configuration for an agent:
+## Desinstalar
 
 ```bash
 go run ./cmd/nea-ai uninstall --agent opencode --components brain,flow
 ```
 
-Uninstall removes NEA-managed entries and known Flow-NEA files. It does not
-remove unrelated user configuration.
+`uninstall` elimina entradas y archivos conocidos administrados por NEA AI. No
+borra configuracion ajena del usuario.
 
-## Release Build
+## Build De Release
 
-Windows example:
+Ejemplo Windows:
 
 ```bash
 go build -ldflags "-X nea-ai/internal/app.Version=v0.2.0" -o dist/nea-ai-windows-amd64.exe ./cmd/nea-ai
 ```
 
-## Current Scope
+## Alcance Actual
 
-NEA AI is not a new coding agent. It is the runtime/control plane that prepares
-existing agents with memory, workflow, verification, and recovery support.
+NEA AI no es otro agente de codigo. Es el runtime/control plane que prepara los
+agentes existentes con memoria, flujo, verificacion y recuperacion.
 
-Current MVP:
+El MVP actual cubre:
 
-```text
-NEA AI = installer + NeaBrain memory + Flow-NEA + OpenSpec + doctor
-```
+- instalacion multi-agente
+- configuracion MCP NeaBrain
+- instalacion Flow-NEA
+- bootstrap OpenSpec
+- `status`
+- `doctor`
+- `doctor --fix`
+- `uninstall`
+
+## Roadmap Corto
+
+Siguientes bloques:
+
+- `flow` commands desde `nea-ai`
+- ping real de MCP/NeaBrain
+- soporte Cursor, VS Code y Gemini CLI
+- releases multiplataforma
+- TUI/dashboard local
