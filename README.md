@@ -62,18 +62,63 @@ Repos base:
 
 ## Instalacion
 
-Desde este repositorio:
+### Homebrew (macOS y Linux)
 
 ```bash
-go run ./cmd/nea-ai install --agent codex --components brain,flow
-go run ./cmd/nea-ai install --agent opencode --components brain,flow
-go run ./cmd/nea-ai install --agent claude-code --components brain,flow
+brew install RDuuke/tap/nea-ai
+```
+
+### Scoop (Windows)
+
+```powershell
+scoop bucket add rduuke https://github.com/RDuuke/scoop-bucket
+scoop install nea-ai
+```
+
+### Script (Linux y macOS)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/RDuuke/nea-ai/main/scripts/install.sh | bash
+```
+
+Variables opcionales: `NEA_AI_VERSION`, `NEA_AI_BIN_DIR`.
+
+### Script (Windows PowerShell)
+
+```powershell
+iwr https://raw.githubusercontent.com/RDuuke/nea-ai/main/scripts/install.ps1 -UseBasicParsing | iex
+```
+
+Variables opcionales: `$env:NEA_AI_VERSION`, `$env:NEA_AI_BIN_DIR`, `$env:NEA_AI_NO_PATH`.
+
+### Paquete `.deb` / `.rpm` / `.apk`
+
+Cada release publica paquetes nativos como assets en
+<https://github.com/RDuuke/nea-ai/releases/latest>. Ejemplo Debian/Ubuntu:
+
+```bash
+curl -fsSL -o nea-ai.deb \
+  https://github.com/RDuuke/nea-ai/releases/download/v0.2.0/nea-ai_0.2.0_linux_amd64.deb
+sudo dpkg -i nea-ai.deb
+```
+
+### Descarga manual
+
+Cada release incluye archives `tar.gz`/`zip`, paquetes `deb`/`rpm`/`apk` y
+`checksums.txt` para verificar SHA256.
+
+## Uso Rapido
+
+```bash
+nea-ai install --agent codex --components brain,flow
+nea-ai install --agent opencode --components brain,flow
+nea-ai install --agent claude-code --components brain,flow
 ```
 
 ## Inicializar Un Proyecto
 
 ```bash
-go run ./cmd/nea-ai init
+nea-ai init
 ```
 
 Crea:
@@ -90,9 +135,9 @@ openspec/
 Todos los comandos emiten JSON en stdout.
 
 ```bash
-go run ./cmd/nea-ai status --agent codex
-go run ./cmd/nea-ai status --agent opencode
-go run ./cmd/nea-ai status --agent claude-code
+nea-ai status --agent codex
+nea-ai status --agent opencode
+nea-ai status --agent claude-code
 ```
 
 ## Flow
@@ -100,22 +145,22 @@ go run ./cmd/nea-ai status --agent claude-code
 Ver estado OpenSpec/Flow-NEA del proyecto actual:
 
 ```bash
-go run ./cmd/nea-ai flow status
+nea-ai flow status
 ```
 
 Crear un quick blueprint para un cambio chico:
 
 ```bash
-go run ./cmd/nea-ai flow quick fix-readme --title "ajustar readme" --objective "Mejorar documentacion publica"
+nea-ai flow quick fix-readme --title "ajustar readme" --objective "Mejorar documentacion publica"
 ```
 
 Crear artefactos OpenSpec para fases de Flow-NEA:
 
 ```bash
-go run ./cmd/nea-ai flow explore add-feature --objective "Understand the change"
-go run ./cmd/nea-ai flow propose add-feature --summary "Bounded implementation plan"
-go run ./cmd/nea-ai flow continue
-go run ./cmd/nea-ai flow verify add-feature --summary "CI passed" --commands "go test ./..."
+nea-ai flow explore add-feature --objective "Understand the change"
+nea-ai flow propose add-feature --summary "Bounded implementation plan"
+nea-ai flow continue
+nea-ai flow verify add-feature --summary "CI passed" --commands "go test ./..."
 ```
 
 ## Doctor
@@ -123,25 +168,33 @@ go run ./cmd/nea-ai flow verify add-feature --summary "CI passed" --commands "go
 Validar instalacion:
 
 ```bash
-go run ./cmd/nea-ai doctor --agent opencode
+nea-ai doctor --agent opencode
 ```
 
 Reparar componentes faltantes:
 
 ```bash
-go run ./cmd/nea-ai doctor --fix --agent opencode
+nea-ai doctor --fix --agent opencode
 ```
 
 ## Desinstalar
 
 ```bash
-go run ./cmd/nea-ai uninstall --agent opencode --components brain,flow
+nea-ai uninstall --agent opencode --components brain,flow
 ```
 
 `uninstall` elimina entradas y archivos conocidos administrados por NEA AI. No
 borra configuracion ajena del usuario.
 
-## Build De Release
+## Desarrollo
+
+Correr el CLI desde el repo sin instalar:
+
+```bash
+go run ./cmd/nea-ai status --agent codex
+go run ./cmd/nea-ai flow status
+go run ./cmd/nea-ai doctor --agent opencode
+```
 
 Build local con version inyectada:
 
@@ -159,8 +212,16 @@ make build VERSION=v0.2.0
 
 El release usa `.goreleaser.yaml`. En pull requests que tocan release, CLI o
 Go module, `.github/workflows/release.yml` ejecuta `goreleaser check`. Al
-empujar un tag `v*`, el mismo workflow corre GoReleaser y publica artefactos
-para `linux|darwin|windows` x `amd64|arm64`, mas `checksums.txt`.
+empujar un tag `v*`, el mismo workflow corre GoReleaser y publica:
+
+- archives `tar.gz`/`zip` para `linux|darwin|windows` x `amd64|arm64`
+- paquetes `deb`/`rpm`/`apk`
+- formula Homebrew en `RDuuke/homebrew-tap`
+- manifest Scoop en `RDuuke/scoop-bucket`
+- `checksums.txt` con SHA256 de todos los archives
+
+Prerrequisito: secret `HOMEBREW_TAP_TOKEN` en el repo (PAT con scope `repo`
+sobre `RDuuke/homebrew-tap` y `RDuuke/scoop-bucket`).
 
 ```bash
 git tag v0.2.0
@@ -171,7 +232,7 @@ Validar la configuracion antes de tagear:
 
 ```bash
 goreleaser check
-goreleaser release --snapshot --clean
+goreleaser release --snapshot --clean --skip=publish
 ```
 
 ## Alcance Actual

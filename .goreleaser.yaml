@@ -43,6 +43,56 @@ archives:
       - LICENSE
       - assets/brand/*.svg
 
+nfpms:
+  - id: nea-ai
+    package_name: nea-ai
+    ids:
+      - nea-ai
+    vendor: RDuuke
+    homepage: https://github.com/RDuuke/nea-ai
+    maintainer: juandg <juan.duque1008@gmail.com>
+    description: |
+      NEA AI control plane: installer + NeaBrain memory + Flow-NEA + OpenSpec + doctor.
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    bindir: /usr/bin
+    section: utils
+
+brews:
+  - name: nea-ai
+    ids:
+      - nea-ai
+    repository:
+      owner: RDuuke
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/RDuuke/nea-ai
+    description: NEA AI local-first control plane for AI dev agents.
+    license: MIT
+    test: |
+      system "#{bin}/nea-ai", "version"
+    install: |
+      bin.install "nea-ai"
+
+scoops:
+  - name: nea-ai
+    ids:
+      - nea-ai
+    repository:
+      owner: RDuuke
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: bucket
+    homepage: https://github.com/RDuuke/nea-ai
+    description: NEA AI local-first control plane for AI dev agents.
+    license: MIT
+
 checksum:
   name_template: checksums.txt
   algorithm: sha256
