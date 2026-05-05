@@ -21,7 +21,7 @@ func BackupFile(path string) (string, error) {
 	if err := os.MkdirAll(filepath.Dir(backupPath), 0o755); err != nil {
 		return "", err
 	}
-	if err := os.WriteFile(backupPath, data, 0o644); err != nil {
+	if err := os.WriteFile(backupPath, data, 0o600); err != nil {
 		return "", err
 	}
 	return backupPath, nil

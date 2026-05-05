@@ -110,12 +110,12 @@ func Quick(workDir string, options QuickOptions) (QuickResult, error) {
 	if exists(quickPath) {
 		return QuickResult{}, fmt.Errorf("quick artifact already exists: %s", quickPath)
 	}
-	if err := os.WriteFile(quickPath, []byte(renderQuick(options)), 0o644); err != nil {
+	if err := os.WriteFile(quickPath, []byte(renderQuick(options)), 0o600); err != nil {
 		return QuickResult{}, err
 	}
 
 	statusPath := filepath.Join(workDir, "openspec", "changes", ".status.yaml")
-	if err := os.WriteFile(statusPath, []byte(renderQuickStatus(options.Name)), 0o644); err != nil {
+	if err := os.WriteFile(statusPath, []byte(renderQuickStatus(options.Name)), 0o600); err != nil {
 		return QuickResult{}, err
 	}
 
