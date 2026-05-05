@@ -45,12 +45,19 @@ type FlowStatus struct {
 }
 
 func Build(version string) (Report, error) {
+	return BuildForAgent(version, model.AgentCodex)
+}
+
+func BuildForAgent(version string, agent model.AgentID) (Report, error) {
 	paths, err := system.ResolvePaths()
 	if err != nil {
 		return Report{}, err
 	}
+	if agent == "" {
+		agent = model.AgentCodex
+	}
 	registry := components.DefaultRegistry()
-	componentStatuses := registry.DetectAll(components.ContextFromPaths(paths, model.AgentCodex))
+	componentStatuses := registry.DetectAll(components.ContextFromPaths(paths, agent))
 	brainStatus := componentByID(componentStatuses, model.ComponentBrain)
 	flowStatus := componentByID(componentStatuses, model.ComponentFlow)
 	openSpecPath := filepath.Join(paths.WorkDir, "openspec")

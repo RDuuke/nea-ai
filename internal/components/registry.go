@@ -1,6 +1,7 @@
 package components
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -120,7 +121,7 @@ func (brainComponent) Install(ctx InstallContext) (any, error) {
 func (brainComponent) Detect(ctx InstallContext) Status {
 	brainPath, _ := brain.ResolveNeaBrain(ctx.WorkDir)
 	configPath := agents.ConfigPath(ctx.HomeDir, ctx.Agent)
-	configured := fileContains(configPath, "[mcp_servers.neabrain]")
+	configured := brainConfigured(configPath, ctx.Agent)
 	return Status{
 		ID:        model.ComponentBrain,
 		Present:   brainPath != "",
@@ -135,9 +136,10 @@ func (brainComponent) Detect(ctx InstallContext) Status {
 
 func (component brainComponent) Checks(ctx InstallContext) []Check {
 	status := component.Detect(ctx)
+	agentName := string(ctx.Agent)
 	return []Check{
 		checkBool("neabrain.binary", status.Present, "neabrain binary resolved", "neabrain binary not found in PATH or sibling repo"),
-		checkBool("codex.neabrain_mcp", status.Installed, "Codex NeaBrain MCP configured", "Codex NeaBrain MCP missing; run `nea-ai install --agent codex --components brain`"),
+		checkBool(agentName+".neabrain_mcp", status.Installed, agentName+" NeaBrain MCP configured", agentName+" NeaBrain MCP missing; run `nea-ai install --agent "+agentName+" --components brain`"),
 	}
 }
 
@@ -159,8 +161,8 @@ func (flowComponent) Install(ctx InstallContext) (any, error) {
 }
 
 func (flowComponent) Detect(ctx InstallContext) Status {
-	skillsPath := filepath.Join(ctx.HomeDir, ".codex", "skills", "flow-nea-init", "SKILL.md")
-	projectPromptPath := filepath.Join(ctx.WorkDir, "AGENTS.md")
+	skillsPath := flowSkillsPath(ctx.HomeDir, ctx.Agent)
+	projectPromptPath := flowPromptPath(ctx.HomeDir, ctx.WorkDir, ctx.Agent)
 	skillsPresent := exists(skillsPath)
 	promptPresent := exists(projectPromptPath)
 	return Status{
@@ -177,9 +179,10 @@ func (flowComponent) Detect(ctx InstallContext) Status {
 
 func (component flowComponent) Checks(ctx InstallContext) []Check {
 	status := component.Detect(ctx)
+	agentName := string(ctx.Agent)
 	return []Check{
-		checkBool("flow.skills", fileExists(status.Details["skills_path"], "SKILL.md"), "NEA Flow skills installed for Codex", "NEA Flow skills missing; run `nea-ai install --agent codex --components flow`"),
-		checkBool("flow.project_prompt", exists(status.Details["project_prompt_path"]), "Project AGENTS.md present", "Project AGENTS.md missing; run `nea-ai install --agent codex --components flow`"),
+		checkBool("flow.skills."+agentName, fileExists(status.Details["skills_path"], "SKILL.md"), "NEA Flow skills installed for "+agentName, "NEA Flow skills missing; run `nea-ai install --agent "+agentName+" --components flow`"),
+		checkBool("flow.prompt."+agentName, exists(status.Details["project_prompt_path"]), "NEA Flow prompt present for "+agentName, "NEA Flow prompt missing; run `nea-ai install --agent "+agentName+" --components flow`"),
 	}
 }
 
@@ -202,4 +205,66 @@ func fileExists(parts ...string) bool {
 func fileContains(path string, needle string) bool {
 	data, err := os.ReadFile(path)
 	return err == nil && strings.Contains(string(data), needle)
+}
+
+func brainConfigured(configPath string, agent model.AgentID) bool {
+	switch agent {
+	case model.AgentCodex:
+		return fileContains(configPath, "[mcp_servers.neabrain]")
+	case model.AgentOpenCode:
+		return jsonPathExists(configPath, "mcp", "servers", "neabrain")
+	case model.AgentClaudeCode:
+		return jsonPathExists(configPath, "mcpServers", "neabrain")
+	default:
+		return false
+	}
+}
+
+func jsonPathExists(path string, keys ...string) bool {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	var root map[string]any
+	if err := json.Unmarshal(data, &root); err != nil {
+		return false
+	}
+	current := root
+	for index, key := range keys {
+		value, ok := current[key]
+		if !ok {
+			return false
+		}
+		if index == len(keys)-1 {
+			return true
+		}
+		next, ok := value.(map[string]any)
+		if !ok {
+			return false
+		}
+		current = next
+	}
+	return false
+}
+
+func flowSkillsPath(homeDir string, agent model.AgentID) string {
+	switch agent {
+	case model.AgentOpenCode:
+		return filepath.Join(homeDir, ".config", "opencode", "skills", "flow-nea-init", "SKILL.md")
+	case model.AgentClaudeCode:
+		return filepath.Join(homeDir, ".claude", "skills", "flow-nea-init", "SKILL.md")
+	default:
+		return filepath.Join(homeDir, ".codex", "skills", "flow-nea-init", "SKILL.md")
+	}
+}
+
+func flowPromptPath(homeDir string, workDir string, agent model.AgentID) string {
+	switch agent {
+	case model.AgentOpenCode:
+		return filepath.Join(homeDir, ".config", "opencode", "AGENTS.md")
+	case model.AgentClaudeCode:
+		return filepath.Join(homeDir, ".claude", "CLAUDE.md")
+	default:
+		return filepath.Join(workDir, "AGENTS.md")
+	}
 }

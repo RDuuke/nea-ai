@@ -36,8 +36,8 @@ func Install(options InstallOptions) (InstallResult, error) {
 	if options.Component == "" {
 		options.Component = model.ComponentBrain
 	}
-	if options.Agent != model.AgentCodex {
-		return InstallResult{}, fmt.Errorf("brain install currently supports only agent %q", model.AgentCodex)
+	if !supportedAgent(options.Agent) {
+		return InstallResult{}, fmt.Errorf("brain install does not support agent %q", options.Agent)
 	}
 	if options.Component != model.ComponentBrain {
 		return InstallResult{}, fmt.Errorf("unsupported component %q", options.Component)
@@ -76,6 +76,15 @@ func Install(options InstallOptions) (InstallResult, error) {
 		BackupPath:    backupPath,
 		CommandOutput: strings.TrimSpace(string(output)),
 	}, nil
+}
+
+func supportedAgent(agent model.AgentID) bool {
+	switch agent {
+	case model.AgentCodex, model.AgentOpenCode, model.AgentClaudeCode:
+		return true
+	default:
+		return false
+	}
 }
 
 func ResolveNeaBrain(workDir string) (string, error) {

@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"nea-ai/internal/components"
+	"nea-ai/internal/model"
 	"nea-ai/internal/status"
 )
 
@@ -27,11 +28,15 @@ type Report struct {
 }
 
 func Run(version string) (Report, error) {
-	st, err := status.Build(version)
+	return RunForAgent(version, model.AgentCodex)
+}
+
+func RunForAgent(version string, agent model.AgentID) (Report, error) {
+	st, err := status.BuildForAgent(version, agent)
 	if err != nil {
 		return Report{}, err
 	}
-	componentChecks := components.DefaultRegistry().Checks(components.ContextFromPaths(st.Paths, ""))
+	componentChecks := components.DefaultRegistry().Checks(components.ContextFromPaths(st.Paths, agent))
 	checks := []Check{
 		checkBool("openspec.present", st.OpenSpec.Present, "openspec directory present", "openspec directory missing; run `nea-ai init`"),
 		checkBool("openspec.config", st.OpenSpec.ConfigPresent, "openspec config present", "openspec/config.yaml missing"),

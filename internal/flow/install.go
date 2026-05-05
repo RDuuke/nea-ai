@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,8 +35,8 @@ func Install(options InstallOptions) (InstallResult, error) {
 	if options.Agent == "" {
 		options.Agent = model.AgentCodex
 	}
-	if options.Agent != model.AgentCodex {
-		return InstallResult{}, fmt.Errorf("flow install currently supports only agent %q", model.AgentCodex)
+	if !supportedAgent(options.Agent) {
+		return InstallResult{}, fmt.Errorf("flow install does not support agent %q", options.Agent)
 	}
 
 	paths, err := system.ResolvePaths()
@@ -51,15 +52,27 @@ func Install(options InstallOptions) (InstallResult, error) {
 		return InstallResult{}, err
 	}
 
+	layout := agentLayout(paths.HomeDir, options.WorkingDir, options.Agent)
 	skillsSource := filepath.Join(sourceRepo, "skills")
-	skillsTarget := filepath.Join(paths.HomeDir, ".codex", "skills")
+	skillsTarget := layout.skillsTarget
 	filesCopied, err := copyTree(skillsSource, skillsTarget)
 	if err != nil {
 		return InstallResult{}, err
 	}
 
-	promptSource := filepath.Join(sourceRepo, "examples", "codex", "agents.md")
-	promptTarget := filepath.Join(options.WorkingDir, "AGENTS.md")
+	if layout.commandsSource != "" && layout.commandsTarget != "" {
+		if _, err := copyMarkdownFiles(filepath.Join(sourceRepo, layout.commandsSource), layout.commandsTarget); err != nil {
+			return InstallResult{}, err
+		}
+	}
+	if options.Agent == model.AgentOpenCode {
+		if err := installOpenCodeConfig(filepath.Join(sourceRepo, "examples", "opencode", "opencode.multi.json"), filepath.Join(paths.HomeDir, ".config", "opencode", "config.json")); err != nil {
+			return InstallResult{}, err
+		}
+	}
+
+	promptSource := filepath.Join(sourceRepo, layout.promptSource)
+	promptTarget := layout.promptTarget
 	backupPath, err := installProjectPrompt(promptSource, promptTarget)
 	if err != nil {
 		return InstallResult{}, err
@@ -75,6 +88,52 @@ func Install(options InstallOptions) (InstallResult, error) {
 		ProjectPromptBak: backupPath,
 		FilesCopied:      filesCopied,
 	}, nil
+}
+
+type layout struct {
+	skillsTarget   string
+	promptSource   string
+	promptTarget   string
+	commandsSource string
+	commandsTarget string
+}
+
+func supportedAgent(agent model.AgentID) bool {
+	switch agent {
+	case model.AgentCodex, model.AgentOpenCode, model.AgentClaudeCode:
+		return true
+	default:
+		return false
+	}
+}
+
+func agentLayout(homeDir string, workDir string, agent model.AgentID) layout {
+	switch agent {
+	case model.AgentOpenCode:
+		opencodeDir := filepath.Join(homeDir, ".config", "opencode")
+		return layout{
+			skillsTarget:   filepath.Join(opencodeDir, "skills"),
+			promptSource:   filepath.Join("examples", "opencode", "AGENTS.md"),
+			promptTarget:   filepath.Join(opencodeDir, "AGENTS.md"),
+			commandsSource: filepath.Join("examples", "opencode", "commands"),
+			commandsTarget: filepath.Join(opencodeDir, "commands"),
+		}
+	case model.AgentClaudeCode:
+		claudeDir := filepath.Join(homeDir, ".claude")
+		return layout{
+			skillsTarget:   filepath.Join(claudeDir, "skills"),
+			promptSource:   filepath.Join("examples", "claude-code", "CLAUDE.md"),
+			promptTarget:   filepath.Join(claudeDir, "CLAUDE.md"),
+			commandsSource: filepath.Join("examples", "claude-code", "commands"),
+			commandsTarget: filepath.Join(claudeDir, "commands"),
+		}
+	default:
+		return layout{
+			skillsTarget: filepath.Join(homeDir, ".codex", "skills"),
+			promptSource: filepath.Join("examples", "codex", "agents.md"),
+			promptTarget: filepath.Join(workDir, "AGENTS.md"),
+		}
+	}
 }
 
 func ResolveFlowRepo(workDir string) (string, error) {
@@ -119,6 +178,83 @@ func copyTree(source string, target string) (int, error) {
 		return nil
 	})
 	return count, err
+}
+
+func copyMarkdownFiles(source string, target string) (int, error) {
+	entries, err := os.ReadDir(source)
+	if os.IsNotExist(err) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		return 0, err
+	}
+	count := 0
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".md" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(source, entry.Name()))
+		if err != nil {
+			return count, err
+		}
+		if err := os.WriteFile(filepath.Join(target, entry.Name()), data, 0o644); err != nil {
+			return count, err
+		}
+		count++
+	}
+	return count, nil
+}
+
+func installOpenCodeConfig(source string, target string) error {
+	sourceData, err := os.ReadFile(source)
+	if err != nil {
+		return err
+	}
+	var sourceConfig map[string]any
+	if err := json.Unmarshal(sourceData, &sourceConfig); err != nil {
+		return err
+	}
+
+	targetData, err := os.ReadFile(target)
+	if os.IsNotExist(err) {
+		targetData = []byte("{}")
+	} else if err != nil {
+		return err
+	}
+	var targetConfig map[string]any
+	if err := json.Unmarshal(targetData, &targetConfig); err != nil {
+		targetConfig = map[string]any{}
+	}
+
+	sourceAgents, _ := sourceConfig["agent"].(map[string]any)
+	if len(sourceAgents) == 0 {
+		return nil
+	}
+	targetAgents := getOrCreate(targetConfig, "agent")
+	for name, value := range sourceAgents {
+		targetAgents[name] = value
+	}
+
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(targetConfig, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(target, append(data, '\n'), 0o644)
+}
+
+func getOrCreate(values map[string]any, key string) map[string]any {
+	if child, ok := values[key].(map[string]any); ok {
+		return child
+	}
+	child := map[string]any{}
+	values[key] = child
+	return child
 }
 
 func installProjectPrompt(source string, target string) (string, error) {

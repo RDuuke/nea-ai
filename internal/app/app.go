@@ -32,13 +32,13 @@ func Run(args []string, stdout io.Writer) error {
 		printHelp(stdout)
 		return nil
 	case "status":
-		report, err := status.Build(Version)
+		report, err := runStatus(args[1:])
 		if err != nil {
 			return err
 		}
 		return writeJSON(stdout, report)
 	case "doctor":
-		report, err := doctor.Run(Version)
+		report, err := runDoctor(args[1:])
 		if err != nil {
 			return err
 		}
@@ -62,6 +62,25 @@ func Run(args []string, stdout io.Writer) error {
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
+}
+
+func runStatus(args []string) (status.Report, error) {
+	fs := flag.NewFlagSet("status", flag.ContinueOnError)
+	agent := fs.String("agent", string(model.AgentCodex), "Agent to inspect")
+	_ = fs.Bool("json", true, "Write JSON output")
+	if err := fs.Parse(args); err != nil {
+		return status.Report{}, err
+	}
+	return status.BuildForAgent(Version, model.AgentID(*agent))
+}
+
+func runDoctor(args []string) (doctor.Report, error) {
+	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
+	agent := fs.String("agent", string(model.AgentCodex), "Agent to inspect")
+	if err := fs.Parse(args); err != nil {
+		return doctor.Report{}, err
+	}
+	return doctor.RunForAgent(Version, model.AgentID(*agent))
 }
 
 type InstallReport struct {
@@ -121,10 +140,10 @@ func printHelp(stdout io.Writer) {
 
 Usage:
   nea-ai version
-  nea-ai status --json
-  nea-ai doctor
+  nea-ai status --json [--agent codex|opencode|claude-code]
+  nea-ai doctor [--agent codex|opencode|claude-code]
   nea-ai init
-  nea-ai install --agent codex --components brain,flow
+  nea-ai install --agent codex|opencode|claude-code --components brain,flow
 
-Foundation commands are implemented: version, status, doctor, init, install brain for codex.`)
+Foundation commands are implemented: version, status, doctor, init, install brain/flow for codex, opencode, and claude-code.`)
 }
