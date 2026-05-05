@@ -64,7 +64,7 @@ func TestQuickCreatesBlueprintAndUpdatesStatus(t *testing.T) {
 	result, err := Quick(dir, QuickOptions{
 		Name:      "fix-readme",
 		Title:     "ajustar readme",
-		Objective: "Mejorar documentacion publica.",
+		Objective: "Improve public documentation.",
 		Files:     []string{"README.md"},
 	})
 	if err != nil {

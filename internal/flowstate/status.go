@@ -140,20 +140,20 @@ func renderQuick(options QuickOptions) string {
 	}
 	files := nonEmpty(options.Files, []string{"Por definir"})
 	blueprint := nonEmpty(options.Blueprint, []string{
-		"Revisar el area afectada con el minimo contexto necesario.",
-		"Aplicar el cambio de forma acotada.",
-		"Validar con los comandos indicados.",
+		"Review the affected area with the minimum necessary context.",
+		"Apply the change in a bounded way.",
+		"Validate with the indicated commands.",
 	})
-	risks := nonEmpty(options.Risks, []string{"El alcance puede requerir flujo completo si aparecen cambios de arquitectura o multiples dominios."})
+	risks := nonEmpty(options.Risks, []string{"Scope may require the full flow if architecture or multi-domain changes appear."})
 	verification := nonEmpty(options.Verification, []string{"go test ./...", "nea-ai flow status --json"})
 
 	return fmt.Sprintf(`# Quick Fix: %s
 
-## Objetivo
+## Objective
 
 %s
 
-## Archivos afectados
+## Affected Files
 
 %s
 
@@ -161,11 +161,11 @@ func renderQuick(options QuickOptions) string {
 
 %s
 
-## Riesgos
+## Risks
 
 %s
 
-## Verificacion
+## Verification
 
 %s
 `, title, objective, markdownList(files), markdownList(blueprint), markdownList(risks), markdownList(verification))
